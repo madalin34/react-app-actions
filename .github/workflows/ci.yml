@@ -11,11 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          #va fi diverit pf fiecare OS si aplicatie. Verificam doc la actiune
+          path: ~/.npm
+          # el va cauta dupa cheia scrisa. Daca se gaseste o va folosi, daca nu se va crea un cache si urmat tura va fi folosit
+          # cheia poate avea nume dinamic, poate avea ${{}} in nume in caz de dependentele se schimba sau OS-ul
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json')}}
+          # setam ca daca GH nu gaseste cache dupa cheia de sus sa caute dupa vechile cach-uri dupa pattern
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Use NodeJS
         uses: actions/setup-node@v1
         with:
           node-version: "12.x"
-          #similar cu npm install dar e mai facil pt ci
+        #similar cu npm install dar e mai facil pt ci
       - run: npm ci
       - run: npm run format:check
       - run: npm test -- --coverage
