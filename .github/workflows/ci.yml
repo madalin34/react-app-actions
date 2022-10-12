@@ -25,7 +25,7 @@ jobs:
       - name: Use NodeJS
         uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
+          node-version: "16.x"
         #similar cu npm install dar e mai facil pt ci
       - run: npm ci
       - run: npm run format:check
@@ -33,9 +33,21 @@ jobs:
         env:
           #sa nu avem terminal interactiv
           CI: true
+      - name: Upload Test coverage
+        uses: actions/upload-artifacts@v2
+        with:
+          name: code-coverage
+          # avem folder coverage dupa ce executam step-ul anterior
+          path: coverage
       - name: Build Project
         if: github.event_name == 'push'
         run: npm run build
+      - name: Upload build folder
+        uses: actions/upload-artifacts@v2
+        with:
+          name: build
+          path: build
+      # - uses: actions/download-artifact folosim sa downloadam artefact-ul
       - name: Deploy to Staging
         if: github.event_name == 'push'
         run: npx surge --project ./build --domain mgactions.surge.sh
