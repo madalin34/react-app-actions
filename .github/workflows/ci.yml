@@ -34,7 +34,7 @@ jobs:
           #sa nu avem terminal interactiv
           CI: true
       - name: Upload Test coverage
-        uses: actions/upload-artifacts@v2
+        uses: actions/upload-artifact@v2
         with:
           name: code-coverage
           # avem folder coverage dupa ce executam step-ul anterior
@@ -44,7 +44,7 @@ jobs:
         run: npm run build
       - name: Upload build folder
         if: github.event_name == 'push'
-        uses: actions/upload-artifacts@v2
+        uses: actions/upload-artifact@v2
         with:
           name: build
           path: build
