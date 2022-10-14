@@ -1,10 +1,11 @@
 name: CI
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, master]
   push:
     branches:
       - "develop"
+      - "master"
 
 jobs:
   build:
@@ -49,6 +50,12 @@ jobs:
           name: build
           path: build
       # - uses: actions/download-artifact folosim sa downloadam artefact-ul
+      - name: Create a Release
+        # cream release cand facem push pe master
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: npx semantic-release
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy to Staging
         if: github.event_name == 'push'
         run: npx surge --project ./build --domain mgactions.surge.sh
