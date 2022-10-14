@@ -1,30 +1,61 @@
 name: CI
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, master]
   push:
     branches:
       - "develop"
+      - "master"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          #va fi diverit pf fiecare OS si aplicatie. Verificam doc la actiune
+          path: ~/.npm
+          # el va cauta dupa cheia scrisa. Daca se gaseste o va folosi, daca nu se va crea un cache si urmat tura va fi folosit
+          # cheia poate avea nume dinamic, poate avea ${{}} in nume in caz de dependentele se schimba sau OS-ul
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json')}}
+          # setam ca daca GH nu gaseste cache dupa cheia de sus sa caute dupa vechile cach-uri dupa pattern
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Use NodeJS
         uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
-          #similar cu npm install dar e mai facil pt ci
+          node-version: "16.x"
+        #similar cu npm install dar e mai facil pt ci
       - run: npm ci
       - run: npm run format:check
       - run: npm test -- --coverage
         env:
           #sa nu avem terminal interactiv
           CI: true
+      - name: Upload Test coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: code-coverage
+          # avem folder coverage dupa ce executam step-ul anterior
+          path: coverage
       - name: Build Project
         if: github.event_name == 'push'
         run: npm run build
+      - name: Upload build folder
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: build
+      # - uses: actions/download-artifact folosim sa downloadam artefact-ul
+      - name: Create a Release
+        # cream release cand facem push pe main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy to Staging
         if: github.event_name == 'push'
         run: npx surge --project ./build --domain mgactions.surge.sh
